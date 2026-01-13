@@ -200,4 +200,51 @@ def update_step_1d(u_hat, Px_hat, kx_, D, f_hat, v0, r, gamma, D_R):
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
+ANALYSIS FUNCTIONS
 '''
+def rho(u):
+    '''
+    compute the integral of the density field rho(x) at the input time
+    '''
+    rho = u
+    dx = 1 / 256
+    return np.sum(rho) * dx
+def rho_x(u):
+
+    rho = u
+
+    return rho
+def px(Px):
+
+    px = Px
+
+    # --- Compute order parameter (1D version) ---
+    mask = np.abs(px) > 1e-7
+    n_included = np.count_nonzero(mask)
+
+    if n_included > 0:
+        sum_p = np.sum(px[mask])
+        sum_mag = np.sum(np.abs(px[mask]))
+        P = np.abs(sum_p) / sum_mag if sum_mag > 0 else 0.0
+    else:
+        P = 0.0
+
+    return P
+def integral_px(Px):
+    integral = np.sum(Px) * dx
+    return integral
+def p_x(Px):
+    px = Px
+    return px
+def op(Px,x):
+    Px = Px
+    # Normalize magnitude for arrow size and color intensity
+    Px_max = np.max(np.abs(Px)) if np.max(np.abs(Px)) > 0 else 1.0
+    Px_norm = Px / Px_max
+
+    # Choose arrow positions (sample to avoid clutter)
+    step = max(1, nx // 40)
+    x_sample = x[::step]
+    Px_sample = Px_norm[::step]
+
+    return Px_sample, x_sample
