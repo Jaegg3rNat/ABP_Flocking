@@ -50,7 +50,7 @@ def rho(mu, pe):
     # f = h5py.File(f'/data/workspaces/nathan/Logistic/Sine/sinusoidal_mu{mu:.2f}_Pe{pe:.1f}_w{2 * np.pi:.2f}/dat.h5',
     #               'r')
 
-    meta = f['FIELD_DATA']
+    meta = f['metadata']
     density = meta['DENSITY_SERIES'][:].flatten()
     return np.mean(density[-100:])
 def px(mu, pe):
@@ -59,7 +59,7 @@ def px(mu, pe):
     # f = h5py.File(f'/data/workspaces/nathan/Logistic/Sine/sinusoidal_mu{mu:.2f}_Pe{pe:.1f}_w{2 * np.pi:.2f}/dat.h5',
     #               'r')
 
-    meta = f['FIELD_DATA']
+    meta = f['metadata']
     px = meta['POLARIZATION_INTEGRAL_SERIES'][:].flatten()
 
     return np.mean(px[-100:])
@@ -93,13 +93,13 @@ rc('text', usetex=True)
 '''
 axL = subfigs[0].subplots(1, 1)
 
-# mu = [80 + 1 * i for i in range(1,101)]
-mu = [80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 280]
+mu = [170 + 5 * i for i in range(23)]
 
-Pe = [0 + 0.1 * i for i in range(100)]
+
+Pe = [0 + 0.1 * i for i in range(101)]
 Pe.sort()
-print(Pe)
-print(mu)
+print(Pe[0],Pe[-1])
+print(mu[0],mu[-1])
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
@@ -130,7 +130,8 @@ gradient_magnitude = np.sqrt(dZdx ** 2 + dZdy ** 2)
 ///////////////////////////////////////////////////////////
 '''
 line1 = np.loadtxt('results.txt')
-line2 = np.loadtxt('resultsIm.txt')
+points = np.loadtxt('transition_curve_all.txt')
+
 
 # Define threshold
 threshold = 1.0001
@@ -155,12 +156,20 @@ axL.tick_params(axis='both', labelsize=15)
 cbar.set_label('Normalized population abundance',
                rotation=270, fontsize=15, labelpad=22)
 
-plt.plot(line1[:, 0], line1[:, 1], ls='-', color='black', alpha=0.8)
-plt.axhline(168, 0, 10, color='black')
+# Plot the transition curve line and scatter points on the left axis.
+# Use columns: column 0 = Pe (x), column 1 = mu (y).
+axL.plot(line1[:62, 0], line1[:62, 1], ls='-', color='black', alpha=0.8)
+# axL.scatter(points[:, 0], points[:, 1], marker='o', color='black',alpha = 0.01)
+# axL.hlines(171.76, xmin=0, xmax=6.008,
+#            color='black', ls='--', alpha=0.2)
 
+axL.hlines(171.76, xmin=6.01, xmax=Pe[-1],
+           color='r')
+axL.plot(6.01,171.76, 'o', color = 'r')
 # Details
 axL.set_ylabel('Net growth rate, ' r'$\mu $', fontsize=18)
 axL.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
+axL.set_ylim([80,280])
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
