@@ -15,7 +15,7 @@ import numpy as np
 from scipy.fftpack import fft,ifft,fftfreq,fftshift,ifftshift
 import sys, os, h5py
 import matplotlib.pyplot as plt
-import cv2 # This is only for video-making (optional)
+# import cv2 # This is only for video-making (optional)
 from tqdm import tqdm
 
 # Espera-se
@@ -208,7 +208,6 @@ def rho(u):
     compute the integral of the density field rho(x) at the input time
     '''
     rho = u
-    dx = 1 / 256
     return np.sum(rho) * dx
 def rho_x(u):
 
