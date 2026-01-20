@@ -14,9 +14,6 @@
 
 ## Project Structure
 
-- `Vegetation/Codes/_NonLocal_FC.py`: Contains the implementation of the vegetation model.
-- `Logistic/Codes/LogisticV1.py`: Contains the implementation of the logistic model.
-- `Swift_Hohenberg/Codes/Run_Flow_Integration.py`: Contains the implementation of the Swift-Hohenberg model.
 
 ## Requirements
 

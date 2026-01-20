@@ -44,15 +44,15 @@ def check_corrupt_files(mu_values, pe_values):
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
-def rho(mu, pe):
-    f = h5py.File(f'../Data/1d_v1/_PE{pe:.2f}_MU{mu:.2f}/DATA.h5', 'r')
-
+def rho_series(mu, pe):
+    f = h5py.File(f'../Data/2d_v1/_PE{pe:.2f}_MU{mu:.2f}/DATA.h5', 'r')
     # f = h5py.File(f'/data/workspaces/nathan/Logistic/Sine/sinusoidal_mu{mu:.2f}_Pe{pe:.1f}_w{2 * np.pi:.2f}/dat.h5',
     #               'r')
-
     meta = f['metadata']
-    density = meta['DENSITY_SERIES'][:].flatten()
-    return np.mean(density[-100:])
+    rho = meta['DENSITY_SERIES'][:].flatten()
+    return np.mean(rho[-100:])
+
+
 def px(mu, pe):
     f = h5py.File(f'../Data/1d_v1/_PE{pe:.2f}_MU{mu:.2f}/DATA.h5', 'r')
 
@@ -91,13 +91,11 @@ rc('text', usetex=True)
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
-axL = subfigs[0].subplots(1, 1)
 
-mu = [75 + 5 * i for i in range(42)]
 
-mu.sort()
+mu = [176 +2*i for i in range(40)]
 
-Pe = [0 + 0.1 * i for i in range(104)]
+Pe = [0 + 0.1 * i for i in range(51)]
 Pe.sort()
 print(Pe[0],Pe[-1])
 print(mu[0],mu[-1])
@@ -105,7 +103,7 @@ print(mu[0],mu[-1])
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
-corrupt_files = check_corrupt_files(mu_values=mu, pe_values=Pe)
+# corrupt_files = check_corrupt_files(mu_values=mu, pe_values=Pe)
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
@@ -120,97 +118,44 @@ px_matrix = np.zeros((nx, ny))
 
 for j in tqdm(range(nx)):
     for i in (range(ny)):
-        rho_matrix[j, i] = rho(mu[j], Pe[i])
-        px_matrix[j, i] = px(mu[j], Pe[i])
+        rho_matrix[j, i] = rho_series(mu[j], Pe[i])
+        # px_matrix[j, i] = px(mu[j], Pe[i])
 
-dZdx = np.gradient(rho_matrix, axis=1)  # Gradient along x
-dZdy = np.gradient(rho_matrix, axis=0)  # Gradient along y
-gradient_magnitude = np.sqrt(dZdx ** 2 + dZdy ** 2)
+
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
-line1 = np.loadtxt('results.txt')
-points = np.loadtxt('transition_curve_all.txt')
+axL = subfigs[0].subplots(1, 1)
 
+line1 = np.loadtxt('results2d.txt')
 
 # Define threshold
-threshold = 1.0001
-
+threshold = 1.001
 # Define colormap and set color for values under threshold
 cmap = plt.get_cmap('Greens').copy()
 cmap.set_under('white')  # all values below vmin will be black
-
 # Define the colors for the gradient
 colors = ["#000000", "#800080", "#8A2BE2", "#FF0000", "#FF4500"]
 
-pm = plt.imshow(rho_matrix,
-                cmap=cmap,
-                vmin=threshold,
-                vmax=rho_matrix.max(),
-                extent=np.concatenate((bounds2, bounds)),
+pm = plt.imshow(rho_matrix, cmap=cmap, vmin=threshold, vmax=rho_matrix.max(), extent=np.concatenate((bounds2, bounds)),
                 origin='lower',
                 aspect='auto')
 cbar = fig.colorbar(pm, ax=axL)
-cbar.ax.tick_params(labelsize=13)
-axL.tick_params(axis='both', labelsize=15)
-cbar.set_label('Normalized population abundance',
-               rotation=270, fontsize=15, labelpad=22)
+cbar.ax.tick_params(labelsize=10)
+cbar.set_label('Normalized population abundance', rotation=270, fontsize=11, labelpad=22)
 
-# Plot the transition curve line and scatter points on the left axis.
-# Use columns: column 0 = Pe (x), column 1 = mu (y).
-axL.plot(line1[:63, 0], line1[:63, 1], ls='-', color='black', alpha=0.8,lw =2)
-# axL.scatter(points[:, 0], points[:, 1], marker='o', color='black',alpha = 0.01)
-# axL.hlines(171.76, xmin=0, xmax=6.008,
-#            color='black', ls='--', alpha=0.2)
 
-pe_crit = 6.26
-mu_crit = 175.484
-axL.hlines(mu_crit, xmin=pe_crit, xmax=Pe[-1],
+pe_crit = 7
+mu_crit = 375.245
+plt.plot(line1[:, 0], line1[:, 1], 'k-', label=r'Phase Boundary', linewidth=2)
+axL.hlines(mu_crit, xmin=pe_crit, xmax=10,
            color='r' ,lw =2)
-axL.plot(pe_crit,mu_crit, 'o', color = 'r')
-# Details
-axL.set_ylabel('Net growth rate, ' r'$\mu $', fontsize=18)
-axL.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
-axL.set_ylim([mu[0],mu[-1]])
+plt.plot(pe_crit, mu_crit, 'ro', label='Critical Point', markersize=6)
 
-
-# plt.text(2, 150, s=r'$\mathrm{Re}[\lambda^\pm] > 0$''\n' r'$\mathrm{Im}[\lambda] = 0$',fontsize = 12 ,bbox={'facecolor':'ghostwhite','alpha':0.8,'edgecolor':'none','boxstyle':'round,pad=0.35'},
-# ha='center', va='center')
-
-plt.text(7, 100, s=r'$\mathrm{Re}[\lambda^\pm] < 0$''\n' r'$\mathrm{Im}[\lambda^\pm] = 0$',fontsize = 12 ,bbox={'facecolor':'ghostwhite','alpha':0.8,'edgecolor':'none','boxstyle':'round,pad=0.35'},
-ha='center', va='center')
-# plt.text(8, 240, s=r'$\mathrm{Re}[\lambda] < 0$''\n' r'$\mathrm{Im}[\lambda] = 0$',fontsize = 12 ,bbox={'facecolor':'ghostwhite','alpha':0.8,'edgecolor':'none','boxstyle':'round,pad=0.35'},
-# ha='center', va='center')
-'''
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-'''
-# Right PANEL:  CARRYING CAPACITY
-axR = subfigs[1].subplots(1, 1)
-
-
-pm = plt.imshow(px_matrix,
-                cmap='Blues',
-                vmin=0, vmax=1,
-                extent=np.concatenate((bounds2, bounds)),
-                origin='lower',
-                aspect='auto')
-cbar = fig.colorbar(pm, ax=axR)
-cbar.ax.tick_params(labelsize=13)
-axR.tick_params(axis='both', labelsize=15)
-cbar.set_label('Order Parameter', rotation=270, fontsize=15, labelpad=22)
-
-# Details
-# axR.set_ylabel('Diffusive Damköhler, ' r'$\mathrm{Da} $', fontsize=13)
-axR.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
-
-
-axL.text(Pe[0]-1, mu[-1]+10,'(a)', color='black', fontsize=16+5, weight='bold',)
-axR.text(Pe[0]-1, mu[-1]+10,'(b)', color='black', fontsize=16+5, weight='bold',)
 
 # # --------------------------------------------------
 # ==================================================
 # ==================================================
-plt.savefig('Fig_1.png', bbox_inches="tight")  #
+plt.savefig('Fig_3.png', bbox_inches="tight")  #
 # plt.savefig('Fig_HeatM.pdf', bbox_inches="tight")  #
