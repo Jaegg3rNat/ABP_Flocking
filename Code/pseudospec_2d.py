@@ -84,9 +84,9 @@ def tophat_kernel(dx,dy,nx,ny,radius):
 def rk4_pseudospectral(u, Px, Py, D, f_hat, dt, n_step, kx_, ky_, v0, r, gamma, D_R):
     for i in range(n_step):
         # Compute Fourier transforms of all fields
-        u_hat = fft2(u).astype(np.complex64)
-        Px_hat = fft2(Px).astype(np.complex64)
-        Py_hat = fft2(Py).astype(np.complex64)
+        u_hat = fft2(u)
+        Px_hat = fft2(Px)
+        Py_hat = fft2(Py)
 
         # Perform Runge-Kutta updates for all fields
         k1_u, k1_Px, k1_Py = update_step(u_hat, Px_hat, Py_hat, kx_, ky_, D, f_hat, v0,r, gamma, D_R)
@@ -123,7 +123,6 @@ def rk4_pseudospectral(u, Px, Py, D, f_hat, dt, n_step, kx_, ky_, v0, r, gamma, 
         Py = ifft2(Py_hat).real
 
     return u, Px, Py
-
 def rk2_pseudospectral(u, Px, Py, D, f_hat, dt, n_step, kx_, ky_, v0, r, gamma, D_R):
     for i in range(n_step):
         # Fourier transforms
@@ -159,8 +158,6 @@ def rk2_pseudospectral(u, Px, Py, D, f_hat, dt, n_step, kx_, ky_, v0, r, gamma, 
         Py = ifft2(Py_hat).real
 
     return u, Px, Py
-
-
 def update_step(u_hat, Px_hat, Py_hat, kx_, ky_, D, f_hat, v0, r, gamma, D_R):
 
     # Transform back to physical space
@@ -206,6 +203,41 @@ def global_order_parameter(Px, Py):
 def global_density(u,dx,dy):
     rhomean = np.sum(u) * dx *dy
     return rhomean
+############################################################################################
+def compute_power_spectrum_2d(field, bins):
+    """Compute the 2D power spectrum of the field and return the frequencies and power spectrum."""
+    L = 1
+    nx = bins
+    fft_vals = np.fft.fft2(field)
+    power_spectrum = np.abs(fft_vals) ** 2 / (nx * nx)  # Normalize by total number of points
+    k_magnitude = np.sqrt(ksq)  # Compute radial wavenumber
+
+    # Define radial bins
+    k_bins = np.linspace(0, np.max(k_magnitude), nx // 2)
+    radial_spectrum = np.zeros_like(k_bins)
+
+    # Compute the radial power spectrum by averaging in annular bins
+    for i in range(len(k_bins) - 1):
+        mask = (k_magnitude >= k_bins[i]) & (k_magnitude < k_bins[i + 1])
+        if np.any(mask):
+            radial_spectrum[i] = np.mean(power_spectrum[mask])
+    # plt.plot(radial_spectrum)
+
+    return k_bins[:-1], radial_spectrum[:-1]  # Remove last bin to match lengths
+def find_max_characteristic_frequency_2d(k_bins, radial_spectrum):
+    """Find the characteristic radial wavenumber with the highest power after k=0."""
+
+    mask = k_bins > 0  # Ignore k=0
+    k_filtered = k_bins[mask]
+    power_filtered = radial_spectrum[mask]
+
+    max_index = np.argmax(power_filtered)
+    return k_filtered[max_index], power_filtered[max_index]
+def compute_smax(u, nx):
+    k_bins, radial_spectrum = compute_power_spectrum_2d(u, nx)
+    k_max, p_max = find_max_characteristic_frequency_2d(k_bins, radial_spectrum)
+    return p_max
+#############################################################################################
 def plot_polarization_orientation(Px, Py,count,path):
     """
     Color-coded orientation plot for a 2D polarization field.
@@ -246,6 +278,48 @@ def plot_density(u,count,path):
     plt.tight_layout()
     plt.savefig(f"{path}/density_fig{count:03d}.png", dpi=200, bbox_inches='tight')
     plt.close()
+def plot_pol_hue(Px,Py,count, path):
+    fig, ax2 = plt.subplots(figsize=(10, 10))
+
+    # --- Extent ---
+    x_min, x_max = bounds[0], bounds[1]
+    y_min, y_max = bounds[0], bounds[1]
+    extent = [x_min, x_max, y_min, y_max]
+
+    # --- Polarization magnitude and angle ---
+    mag = np.sqrt(Px ** 2 + Py ** 2)
+    mag_norm = mag / (mag.max() if mag.max() > 0 else 1.0)
+
+    angle = (np.angle(Px + 1j * Py) % (2 * np.pi)) / (2 * np.pi)  # [0,1)
+
+    # --- HSV image ---
+    hsv = np.zeros((*mag.shape, 3))
+    hsv[..., 0] = angle  # hue
+    hsv[..., 1] = 1.0  # saturation
+    hsv[..., 2] = mag_norm  # value
+
+    rgb = mcolors.hsv_to_rgb(hsv)
+
+    ax2.imshow(rgb, origin="lower", extent=extent)
+    ax2.set_xlim(x_min, x_max)
+    ax2.set_ylim(y_min, y_max)
+    # ax2.set_title("Polarization direction & magnitude")
+
+    # --- Correct cyclic colorbar (orientation only) ---
+    norm = mpl.colors.Normalize(vmin=0, vmax=1)
+    sm = mpl.cm.ScalarMappable(cmap="hsv", norm=norm)
+    sm.set_array([])
+
+    cbar = fig.colorbar(sm, ax=ax2, fraction=0.046, pad=0.04)
+    # cbar.set_label("Orientation (degrees)")
+    cbar.set_ticks(np.linspace(0, 1, 9))
+    cbar.set_ticklabels(np.linspace(0, 360, 9).astype(int))
+
+    # --- Save ---
+    plt.savefig(f"{path}/fig_pol{count:03d}.png", dpi=200, bbox_inches="tight")
+    plt.close()
+
+
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
@@ -271,9 +345,9 @@ y = np.linspace(*bounds, ny + 1)[:-1]  # Periodic in y
 x_, y_ = np.meshgrid(x, y, indexing="ij")
 ################
 DEATH_RATE = 0.15
-DIFF_T = 1.5e-5
+DIFF_T = 1e-4
 COMP_RADIUS = 0.1
-DIFF_R = 0.001
+DIFF_R = 0.01
 TAU = COMP_RADIUS**2 / DIFF_T
 MU = float(sys.argv[1])
 PE = float(sys.argv[2])
@@ -325,19 +399,19 @@ def continue_run(pe,mu):
 jojo = False
 if jojo == True:
     u,Px,Py = continue_run(PE,MU)
-    u = u.reshape((nx,ny)).astype(np.float32)
-    Px = Px.reshape((nx,ny)).astype(np.float32)
-    Py = Py.reshape((nx,ny)).astype(np.float32)
+    u = u.reshape((nx,ny))
+    Px = Px.reshape((nx,ny))
+    Py = Py.reshape((nx,ny))
 else:
     # Initialize density field (float32 precision, values around 1)
-    u0 = 1.0 + np.random.rand(nx, ny).astype(np.float32)
-    u = np.copy(u0).astype(np.float32)
+    u0 = 1.0 + np.random.rand(nx, ny)
+    u = np.copy(u0)
     # Define noise amplitude (explicitly float32)
-    noise_amp = np.float32(0.00)
-    bias = np.float32(0.00)  # small bias to nudge global direction
+    noise_amp = (0.00)
+    bias = (0.00)  # small bias to nudge global direction
     # Initialize polarization fields (float32 precision)
-    Px = (noise_amp * np.random.randn(nx, ny).astype(np.float32) + bias).astype(np.float32)
-    Py = (noise_amp * np.random.randn(nx, ny).astype(np.float32)).astype(np.float32)
+    Px = (noise_amp * np.random.randn(nx, ny) + bias)
+    Py = (noise_amp * np.random.randn(nx, ny))
 
 '''
 # -------------------------------------------------------------------------------------
@@ -378,16 +452,16 @@ print(f'Death Rate (d): {DEATH_RATE}')
 print(f'Growth Rate (r): {r}')
 print(f'Interaction Strength (gamma): {COMPETITION_RATE}')
 ##################
-D = np.float32(DIFF_T)
-dt = np.float32(dt)
-v0 = np.float32(VELOCITY)
-r = np.float32(r)
-d = np.float32(DEATH_RATE)
-gamma = np.float32(COMPETITION_RATE)
-D_R = np.float32(DIFF_R)
-kx_ = kx_.astype(np.float32)
-ky_ = ky_.astype(np.float32)
-f_hat = f_hat.astype(np.complex64)
+D = (DIFF_T)
+dt = (dt)
+v0 = (VELOCITY)
+r =(r)
+d = (DEATH_RATE)
+gamma = (COMPETITION_RATE)
+D_R = (DIFF_R)
+kx_ = kx_
+ky_ = ky_
+f_hat = f_hat
 ksq = kx_**2 + ky_**2
 
 
@@ -614,6 +688,7 @@ def run_simulation_and_animate(
         "RADIUS_KERNEL": COMP_RADIUS,
         "ADMENSIONAL_DR": D_r,
         "L": L,
+        "SIZE STEP": dx,
         "VELOCITY": VELOCITY,
         "TAU": TAU,
         "LAST_SAVED_ITERATION": 0,
@@ -635,6 +710,22 @@ def run_simulation_and_animate(
         dtype=np.float64,
         chunks=True,
     )
+    grp_ds = h5file.create_group("density_series")
+
+    ds_density = grp_ds.create_dataset(
+        "DENSITY",
+        shape=(0,),
+        maxshape=(None,),
+        dtype=np.float64,
+        chunks=True,
+    )
+    ds_smax = grp_ds.create_dataset(
+        "S_MAX",
+        shape=(0,),
+        maxshape=(None,),
+        dtype=np.float64,
+        chunks=True,
+    )
 
     # ===============================
     # MAIN TIME LOOP
@@ -642,7 +733,7 @@ def run_simulation_and_animate(
     for n in tqdm(range(1, nt)):
 
         u, Px, Py = rk4_pseudospectral(
-            u, Px, Py, D, f_hat, dt, 500,
+            u, Px, Py, D, f_hat, dt, 1,
             kx_, ky_, v0, r, gamma, D_R
         )
 
@@ -650,36 +741,39 @@ def run_simulation_and_animate(
         # Stability checks
         # ---------------------------
         min_density = u.min()
-        if min_density < TOLERANCE_BREAK:
-            print(f"🚨 BREAK: density {min_density:.2e} at step {n}")
-            idx = np.unravel_index(np.argmin(u), u.shape)
-
-            Px_break = Px[idx]
-            Py_break = Py[idx]
-
-            P_mod = np.sqrt(Px_break ** 2 + Py_break ** 2)
-
-            print(f'Breaking in position: {idx}')
-            # print(f'Order parameter at break: (Px, Py) = ({Px_break}, {Py_break})')
-            print(f'|P| at break = {P_mod}')
-            break
+        # if min_density < TOLERANCE_BREAK:
+        #     print(f"🚨 BREAK: density {min_density:.2e} at step {n}")
+        #     idx = np.unravel_index(np.argmin(u), u.shape)
+        #     print(f'Breaking in position: {idx}')
+        #     break
 
         if min_density < TOLERANCE_WARNING:
-            print(f"⚠️ WARNING: density {min_density:.2e} at step {n}")
+            # print(f"⚠️ WARNING: density {min_density:.2e} at step {n}")
             np.maximum(u, 0.0, out=u)
 
         # ---------------------------
         # Append time series
         # ---------------------------
         if n % frame_interval == 0:
+            # ------------------------------
             pol = global_order_parameter(Px, Py)
 
             ds_pol.resize(ds_pol.shape[0] + 1, axis=0)
             ds_pol[-1] = pol
+            # -----------------------------------
+            density = global_density(u,dx,dy)
 
+            ds_density.resize(ds_density.shape[0] + 1, axis=0)
+            ds_density[-1] = density
+            # -----------------------------------
+            s_max = compute_smax(u,nx)
+
+            ds_smax.resize(ds_smax.shape[0] + 1, axis=0)
+            ds_smax[-1] = s_max
             # --- plotting ---
             plot_polarization_orientation(Px, Py, count, path)
             plot_density(u, count, path)
+            plot_pol_hue(Px,Py,count,path)
             plt.close("all")  # CRITICAL
 
         # ---------------------------
@@ -713,6 +807,6 @@ run_simulation_and_animate(
     u, Px, Py, t, nt, nx, bounds, path,
     D, f_hat, dt, v0, r, gamma, D_R,
     TOLERANCE_BREAK=1e-5,
-    TOLERANCE_WARNING=1e-6,
-    frame_interval=1
+    TOLERANCE_WARNING=1e-8,
+    frame_interval=500
 )
