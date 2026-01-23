@@ -196,10 +196,16 @@ def global_order_parameter(Px, Py):
     """
     Global polarization order parameter for 2D hydrodynamic PDEs.
     """
-    Px_bar = Px.mean()
-    Py_bar = Py.mean()
-    Phi = np.sqrt(Px_bar**2 + Py_bar**2)
-    return Phi
+    Px_sum = np.sum(Px)
+    Py_sum = np.sum(Py)
+
+    numerator = np.sqrt(Px_sum ** 2 + Py_sum ** 2)
+    denominator = np.sum(np.sqrt(Px ** 2 + Py ** 2))
+
+    if denominator == 0:
+        return 0.0
+
+    return numerator / denominator
 def global_density(u,dx,dy):
     rhomean = np.sum(u) * dx *dy
     return rhomean

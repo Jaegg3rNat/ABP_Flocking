@@ -48,19 +48,19 @@ def rho_series(mu, pe):
     f = h5py.File(f'../Data/2d_v1/_PE{pe:.2f}_MU{mu:.2f}/DATA.h5', 'r')
     # f = h5py.File(f'/data/workspaces/nathan/Logistic/Sine/sinusoidal_mu{mu:.2f}_Pe{pe:.1f}_w{2 * np.pi:.2f}/dat.h5',
     #               'r')
-    meta = f['metadata']
-    rho = meta['DENSITY_SERIES'][:].flatten()
+    grp3 = f['density_series']
+    rho = grp3['DENSITY'][:].flatten()
     return np.mean(rho[-100:])
 
 
 def px(mu, pe):
-    f = h5py.File(f'../Data/1d_v1/_PE{pe:.2f}_MU{mu:.2f}/DATA.h5', 'r')
+    f = h5py.File(f'../Data/2d_v1/_PE{pe:.2f}_MU{mu:.2f}/DATA.h5', 'r')
 
     # f = h5py.File(f'/data/workspaces/nathan/Logistic/Sine/sinusoidal_mu{mu:.2f}_Pe{pe:.1f}_w{2 * np.pi:.2f}/dat.h5',
     #               'r')
 
-    meta = f['metadata']
-    px = meta['POLARIZATION_INTEGRAL_SERIES'][:].flatten()
+    grp1 = f['time_series']
+    px = grp1['POLARIZATION'][:].flatten()
 
     return np.mean(px[-100:])
 '''
@@ -93,9 +93,9 @@ rc('text', usetex=True)
 '''
 
 
-mu = [176 +2*i for i in range(40)]
+mu = [400,450]
 
-Pe = [0 + 0.1 * i for i in range(51)]
+Pe = [0 + 0.1 * i for i in range(101)]
 Pe.sort()
 print(Pe[0],Pe[-1])
 print(mu[0],mu[-1])
@@ -119,7 +119,7 @@ px_matrix = np.zeros((nx, ny))
 for j in tqdm(range(nx)):
     for i in (range(ny)):
         rho_matrix[j, i] = rho_series(mu[j], Pe[i])
-        # px_matrix[j, i] = px(mu[j], Pe[i])
+        px_matrix[j, i] = px(mu[j], Pe[i])
 
 
 '''
@@ -146,13 +146,21 @@ cbar.ax.tick_params(labelsize=10)
 cbar.set_label('Normalized population abundance', rotation=270, fontsize=11, labelpad=22)
 
 
-pe_crit = 7
-mu_crit = 375.245
+pe_crit = 7.1
+
+mu_crit = 378.481
 plt.plot(line1[:, 0], line1[:, 1], 'k-', label=r'Phase Boundary', linewidth=2)
 axL.hlines(mu_crit, xmin=pe_crit, xmax=10,
            color='r' ,lw =2)
 plt.plot(pe_crit, mu_crit, 'ro', label='Critical Point', markersize=6)
 
+
+
+axR = subfigs[1].subplots(1, 1)
+
+pm2 = plt.imshow(px_matrix, cmap='Blues', vmin=0, vmax=1, extent=np.concatenate((bounds2, bounds)),
+                origin='lower',
+                aspect='auto')
 
 # # --------------------------------------------------
 # ==================================================
