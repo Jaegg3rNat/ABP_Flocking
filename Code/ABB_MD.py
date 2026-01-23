@@ -15,9 +15,7 @@ Description: This is a molecular dynamics simulation of interacting particles.
 #Libraries
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
-import imageio
-import os
+import os, sys
 import matplotlib.colors as mcolors
 from tqdm import tqdm
 
@@ -95,7 +93,7 @@ nmax = 7000  # maximum number of bugs
 xcells = 1  # system size in x (periodic box width)
 ycells = 1  # system size in y
 ###########################################
-ncycles = 1000  # number of cycles
+ncycles = 5000  # number of cycles
 nsteps = 100  # steps per cycle
 dt = 0.001
 tfinal = ncycles * nsteps * dt
@@ -116,12 +114,12 @@ _range = 0.1  # neighbor counting range
 range2 = _range ** 2
 ###########################################
 # diffusion and active speed
-diff = 0.356e-5
+diff = float(sys.argv[1])#0.356e-5
 difr = 2e-3
 jump = np.sqrt(2.0 * diff * dt)
 jumpr = np.sqrt(2.0 * difr * dt)
 
-v0 = 3.557e-3
+v0 = float(sys.argv[2]) #3.557e-3
 v0dt = v0 * dt
 CARRYING_CAPACITY = 50
 ###########################################
@@ -134,9 +132,9 @@ initpolar = 0
 
 # display / output
 save_gif_frames = True  # set True to save frames and assemble GIF at end (requires imageio)
-gif_outdir = "gif_frames"
+gif_outdir = f"gif_frames_V0{v0:.4e}_DT{diff:.4e}/"
 figsize = (5, 5)
-summary_plot_name = "polarization_summary.png"
+summary_plot_name = f"polarization_{v0}_{diff}.png"
 if save_gif_frames:
     os.makedirs(gif_outdir, exist_ok=True)
 
@@ -176,9 +174,9 @@ elif initpolar == 2:
 else:
     raise ValueError('inconsistent initial polarization')
 ###########################################
-plot_particles_with_orientation(xpos, ypos, theta)
-plt.show()
-plt.close()
+# plot_particles_with_orientation(xpos, ypos, theta)
+# plt.show()
+# plt.close()
 print(f'Number of bugs initialized: {nbugs}')
 ###########################################
 # history arrays
