@@ -93,8 +93,8 @@ nmax = 7000  # maximum number of bugs
 xcells = 1  # system size in x (periodic box width)
 ycells = 1  # system size in y
 ###########################################
-ncycles = 5000  # number of cycles
-nsteps = 100  # steps per cycle
+ncycles = 10000  # number of cycles
+nsteps = 500  # steps per cycle
 dt = 0.001
 tfinal = ncycles * nsteps * dt
 ###########################################
@@ -208,7 +208,7 @@ for icycle in tqdm(range(1, ncycles + 1)):
 
         # Lists to track births and deaths
         to_die = []
-        new_bugs = []  # Store (parent_idx, x, y, colorin, theta, colortheta)
+        new_bugs = []  # Store (parent_idx, x, y, theta)
 
         # Compute pairwise distances ONLY if we have bugs
         if current_nbugs > 1:
@@ -245,9 +245,7 @@ for icycle in tqdm(range(1, ncycles + 1)):
                             ibug,
                             xpos[ibug],
                             ypos[ibug],
-
-                            theta[ibug],
-
+                            theta[ibug]
                         ))
 
         # Process deaths: remove marked bugs
@@ -276,7 +274,7 @@ for icycle in tqdm(range(1, ncycles + 1)):
             births_to_add = min(len(new_bugs), available_space)
 
             for i in range(births_to_add):
-                parent_idx, x, y, th, = new_bugs[i]
+                parent_idx, x, y, th = new_bugs[i]
                 xpos[nbugs] = x
                 ypos[nbugs] = y
                 theta[nbugs] = th
@@ -284,13 +282,13 @@ for icycle in tqdm(range(1, ncycles + 1)):
 
         # Motion: random (translational) + active motion
         if nbugs > 0:
-            xpos[:nbugs] = (xpos[:nbugs] + jump * rng.standard_normal(nbugs) + xcells) % xcells
-            ypos[:nbugs] = (ypos[:nbugs] + jump * rng.standard_normal(nbugs) + ycells) % ycells
+            xpos[:nbugs] = (xpos[:nbugs] + v0dt * np.cos(theta[:nbugs]) + jump * rng.standard_normal(nbugs) + xcells) % xcells
+            ypos[:nbugs] = (ypos[:nbugs] + v0dt * np.sin(theta[:nbugs]) + jump * rng.standard_normal(nbugs) + ycells) % ycells
 
             theta[:nbugs] = theta[:nbugs] + jumpr * rng.standard_normal(nbugs)
 
-            xpos[:nbugs] = (xpos[:nbugs] + v0dt * np.cos(theta[:nbugs]) + xcells) % xcells
-            ypos[:nbugs] = (ypos[:nbugs] + v0dt * np.sin(theta[:nbugs]) + ycells) % ycells
+            # xpos[:nbugs] = (xpos[:nbugs] + xcells) % xcells
+            # ypos[:nbugs] = (ypos[:nbugs]  + ycells) % ycells
 
     print(f'Number of bugs alive at cycle {icycle}, step {istep}: {nbugs}')
 
@@ -298,19 +296,7 @@ for icycle in tqdm(range(1, ncycles + 1)):
         #     break
 
     # end of steps loop
-
-
-
-
-    # --- Polarization Plot ---
-    plot_particles_with_orientation(xpos, ypos, theta)
-    plt.title(f'Particle Orientations (Cycle {icycle})')
-    # plt.show()
-    # Save Polarization plot frame (optional, not used in GIF assembly below)
-    fpath_pol = os.path.join(gif_outdir, f"pol_frame_{icycle:05d}.png")
-    plt.savefig(fpath_pol, dpi=300, bbox_inches="tight")
-    plt.close()
-#
+#-----------------------------------------------------------------------------------------------------------------------#
     # compute stats
     if nbugs > 0:
         polarization = np.sqrt(np.sum(np.cos(theta[:nbugs])) ** 2 + np.sum(np.sin(theta[:nbugs])) ** 2) / nbugs
@@ -320,6 +306,14 @@ for icycle in tqdm(range(1, ncycles + 1)):
     print(f"time={time} (of {tfinal}). {nbugs} bugs. Polarization={polarization:.4f}")
     history[icycle] = nbugs
     hpolar[icycle] = polarization
+    # --- Polarization Plot ---
+    plot_particles_with_orientation(xpos, ypos, theta)
+    plt.title(f'(Cycle {icycle}); Polarization={polarization:.4f})')
+    # plt.show()
+    # Save Polarization plot frame (optional, not used in GIF assembly below)
+    fpath_pol = os.path.join(gif_outdir, f"pol_frame_{icycle:05d}.png")
+    plt.savefig(fpath_pol, dpi=300, bbox_inches="tight")
+    plt.close()
 #
 # # end of time loop
 #

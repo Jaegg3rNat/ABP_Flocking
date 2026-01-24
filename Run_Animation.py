@@ -45,18 +45,20 @@ def images_to_video(image_folder, output_video_path, fps):
 
 if __name__ == "__main__":
     # Define base folder and velocity field name
-    base_folder = f"Code/gif_frames/"  # Replace with the actual base folder path
-    velocity_field_name = 'test'  # Replace with the actual movie name
+    v0 = 1e-2
+    diff = 2e-6
+    base_folder = f"Code/gif_frames_V0{v0:.4e}_DT{diff:.4e}/"  # Replace with the actual base folder path
+    velocity_field_name = 'SSF_phase'  # Replace with the actual movie name
 
     # Define parameters for the video creation
 
 
     # Construct the paths for the image folder and the output video file
     image_folder_path = f'{base_folder}'
-    output_video_path = f'{base_folder}/{velocity_field_name}_video.mov'
+    output_video_path = f'Data/{velocity_field_name}_video.mov'
 
     # Set the desired frames per second (fps) for the output video
-    fps = 30
+    fps = 60
 
     # Call the function to convert images to video
     images_to_video(image_folder_path, output_video_path, fps)

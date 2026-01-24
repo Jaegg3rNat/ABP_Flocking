@@ -14,7 +14,7 @@ import os
 def check_corrupt_files(mu_values, pe_values):
     """Check for corrupted or missing .h5 files in the directory structure."""
 
-    base_folder = f"../Data/1d_v1"
+    base_folder = f"../Data/2d_v1"
     # base_folder = f"/data/workspaces/nathan/Logistic/Sine"
 
     corrupt_files = []
@@ -93,7 +93,7 @@ rc('text', usetex=True)
 '''
 
 
-mu = [400,450]
+mu = [180,190,200,210,220,230,250,300,350,400,450]
 
 Pe = [0 + 0.1 * i for i in range(101)]
 Pe.sort()
@@ -103,7 +103,7 @@ print(mu[0],mu[-1])
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
-# corrupt_files = check_corrupt_files(mu_values=mu, pe_values=Pe)
+corrupt_files = check_corrupt_files(mu_values=mu, pe_values=Pe)
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
