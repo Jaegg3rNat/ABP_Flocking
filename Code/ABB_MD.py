@@ -1,6 +1,6 @@
 """
 ABB_MD.py
-    CODE VERSION : v.3.2
+    CODE VERSION : v.3.2.1
 
 Author: Nathan Silvano
 Date: [2026-Jan]
@@ -177,7 +177,7 @@ else:
 # plot_particles_with_orientation(xpos, ypos, theta)
 # plt.show()
 # plt.close()
-print(f'Number of bugs initialized: {nbugs}')
+# print(f'Number of bugs initialized: {nbugs}')
 ###########################################
 # history arrays
 history = np.zeros(ncycles + 1, dtype=int)
@@ -188,7 +188,7 @@ hpolar = np.zeros(ncycles + 1, dtype=float)
 # initial stats and plots
 # lineages = len(np.unique(colorin[:nbugs]))
 polarization = np.sqrt(np.sum(np.cos(theta[:nbugs])) ** 2 + np.sum(np.sin(theta[:nbugs])) ** 2) / nbugs
-print(f"time=0. (of {tfinal}). {nbugs} bugs. Polarization={polarization:.4f}")
+# print(f"time=0. (of {tfinal}). {nbugs} bugs. Polarization={polarization:.4f}")
 history[0] = nbugs
 # hlin[0] = lineages
 hpolar[0] = polarization
@@ -240,9 +240,8 @@ for icycle in tqdm(range(1, ncycles + 1)):
                     prob = max(prob, 0.0)
 
                     if rng.random() < prob:
-                        # Mark for birth - store parent's data
+                        # Mark for birth - store parent's CURRENT state (no indices!)
                         new_bugs.append((
-                            ibug,
                             xpos[ibug],
                             ypos[ibug],
                             theta[ibug]
@@ -274,7 +273,7 @@ for icycle in tqdm(range(1, ncycles + 1)):
             births_to_add = min(len(new_bugs), available_space)
 
             for i in range(births_to_add):
-                parent_idx, x, y, th = new_bugs[i]
+                x, y, th = new_bugs[i]
                 xpos[nbugs] = x
                 ypos[nbugs] = y
                 theta[nbugs] = th
@@ -287,10 +286,8 @@ for icycle in tqdm(range(1, ncycles + 1)):
 
             theta[:nbugs] = theta[:nbugs] + jumpr * rng.standard_normal(nbugs)
 
-            # xpos[:nbugs] = (xpos[:nbugs] + xcells) % xcells
-            # ypos[:nbugs] = (ypos[:nbugs]  + ycells) % ycells
 
-    print(f'Number of bugs alive at cycle {icycle}, step {istep}: {nbugs}')
+    # print(f'Number of bugs alive at cycle {icycle}, step {istep}: {nbugs}')
 
         # if istep == 10:
         #     break
@@ -303,8 +300,8 @@ for icycle in tqdm(range(1, ncycles + 1)):
     else:
         polarization = 0.0
 
-    print(f"time={time} (of {tfinal}). {nbugs} bugs. Polarization={polarization:.4f}")
-    history[icycle] = nbugs
+    # print(f"time={time} (of {tfinal}). {nbugs} bugs. Polarization={polarization:.4f}")
+    # history[icycle] = nbugs
     hpolar[icycle] = polarization
     # --- Polarization Plot ---
     plot_particles_with_orientation(xpos, ypos, theta)
@@ -319,14 +316,14 @@ for icycle in tqdm(range(1, ncycles + 1)):
 #
 # # final polarization plot
 # # plt.ioff() # Removed
-fig_summary, ax_summary = plt.subplots()
-ax_summary.plot(hpolar)
-ax_summary.set_xlabel('t (cycle)')
-ax_summary.set_ylabel('polarization')
-ax_summary.set_title('Polarization over time')
+# fig_summary, ax_summary = plt.subplots()
+# ax_summary.plot(hpolar)
+# ax_summary.set_xlabel('t (cycle)')
+# ax_summary.set_ylabel('polarization')
+# ax_summary.set_title('Polarization over time')
 #
-# --- Save final summary plot ---
-fig_summary.savefig(summary_plot_name)
-print(f"Saved summary plot to {summary_plot_name}")
-plt.close(fig_summary)
+# # --- Save final summary plot ---
+# fig_summary.savefig(summary_plot_name)
+# print(f"Saved summary plot to {summary_plot_name}")
+# plt.close(fig_summary)
 
