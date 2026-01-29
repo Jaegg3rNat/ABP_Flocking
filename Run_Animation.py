@@ -45,8 +45,8 @@ def images_to_video(image_folder, output_video_path, fps):
 
 if __name__ == "__main__":
     # Define base folder and velocity field name
-    v0 = 1e-2
-    diff = 2e-6
+    v0 = 3e-3
+    diff = 3e-6
     base_folder = f"Code/gif_frames_V0{v0:.4e}_DT{diff:.4e}/"  # Replace with the actual base folder path
     velocity_field_name = 'SSF_phase'  # Replace with the actual movie name
 

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import os, sys
 import matplotlib.colors as mcolors
 from tqdm import tqdm
-
+import psutil
 
 '''
 ///////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ xcells = 1  # system size in x (periodic box width)
 ycells = 1  # system size in y
 ###########################################
 ncycles = 10000  # number of cycles
-nsteps = 500  # steps per cycle
+nsteps = 200  # steps per cycle
 dt = 0.001
 tfinal = ncycles * nsteps * dt
 ###########################################
@@ -193,7 +193,6 @@ history[0] = nbugs
 # hlin[0] = lineages
 hpolar[0] = polarization
 
-
 # -----------------------
 # main time loop
 # -----------------------
@@ -212,9 +211,13 @@ for icycle in tqdm(range(1, ncycles + 1)):
 
         # Compute pairwise distances ONLY if we have bugs
         if current_nbugs > 1:
-            dx = xpos[:current_nbugs, None] - xpos[:current_nbugs]
+            # Create a copy of the current positions to avoid modifying during iteration
+            current_xpos = xpos[:current_nbugs]
+            current_ypos = ypos[:current_nbugs]
+
+            dx = current_xpos[:, None] - current_xpos
             dx = dx - xcells * np.round(dx / xcells)
-            dy = ypos[:current_nbugs, None] - ypos[:current_nbugs]
+            dy = current_ypos[:, None] - current_ypos
             dy = dy - ycells * np.round(dy / ycells)
             dist2 = dx ** 2 + dy ** 2
         else:
@@ -240,44 +243,74 @@ for icycle in tqdm(range(1, ncycles + 1)):
                     prob = max(prob, 0.0)
 
                     if rng.random() < prob:
-                        # Mark for birth - store parent's CURRENT state (no indices!)
+                        # Mark for birth - store parent's CURRENT state
                         new_bugs.append((
-                            xpos[ibug],
+                            xpos[ibug],  # Use current position, not ibug index
                             ypos[ibug],
                             theta[ibug]
                         ))
 
-        # Process deaths: remove marked bugs
+        # Process deaths FIRST
         if to_die:
             # Create a mask of alive bugs
             alive_mask = np.ones(current_nbugs, dtype=bool)
             alive_mask[to_die] = False
 
-            # Compact the arrays
-            n_alive = np.sum(alive_mask)
-            if n_alive > 0:
-                xpos[:n_alive] = xpos[:current_nbugs][alive_mask]
-                ypos[:n_alive] = ypos[:current_nbugs][alive_mask]
-                theta[:n_alive] = theta[:current_nbugs][alive_mask]
+            # Get indices of survivors
+            survivor_indices = np.where(alive_mask)[0]
 
-                nbugs = n_alive
+            # Compact arrays by moving survivors to the beginning
+            # We'll use temporary storage to avoid overwriting
+            n_survivors = len(survivor_indices)
+
+            if n_survivors > 0:
+                # Store survivors in temporary arrays first
+                temp_xpos = np.zeros_like(xpos[:n_survivors])
+                temp_ypos = np.zeros_like(ypos[:n_survivors])
+                temp_theta = np.zeros_like(theta[:n_survivors])
+
+                temp_xpos[:] = xpos[survivor_indices]
+                temp_ypos[:] = ypos[survivor_indices]
+                temp_theta[:] = theta[survivor_indices]
+
+                # Now copy back to the beginning
+                xpos[:n_survivors] = temp_xpos
+                ypos[:n_survivors] = temp_ypos
+                theta[:n_survivors] = temp_theta
+
+                # Clear the rest (optional, but good for debugging)
+                xpos[n_survivors:current_nbugs] = 0
+                ypos[n_survivors:current_nbugs] = 0
+                theta[n_survivors:current_nbugs] = 0
+
+                nbugs = n_survivors
             else:
                 nbugs = 0
+                # Clear all positions
+                xpos[:current_nbugs] = 0
+                ypos[:current_nbugs] = 0
+                theta[:current_nbugs] = 0
         else:
-            # No deaths, but we need to compact if we had deaths earlier in the loop
+            # No deaths this step
             nbugs = current_nbugs
 
         # Process births: add new bugs if there's space
+        # Use the updated nbugs from death processing
         if new_bugs and nbugs < nmax:
             available_space = nmax - nbugs
             births_to_add = min(len(new_bugs), available_space)
 
+            # Get positions for new births
             for i in range(births_to_add):
                 x, y, th = new_bugs[i]
+                # Add small random displacement for new bug (optional)
+                # x += rng.uniform(-disp, disp)
+                # y += rng.uniform(-disp, disp)
                 xpos[nbugs] = x
                 ypos[nbugs] = y
                 theta[nbugs] = th
                 nbugs += 1
+
 
         # Motion: random (translational) + active motion
         if nbugs > 0:
@@ -286,6 +319,20 @@ for icycle in tqdm(range(1, ncycles + 1)):
 
             theta[:nbugs] = theta[:nbugs] + jumpr * rng.standard_normal(nbugs)
 
+
+        # print(xpos)
+        # print(nbugs)
+        # count = len([x for x in (xpos) if x != 0])
+        # print(count)  # Output: 3
+        # # break
+
+
+        mem = psutil.virtual_memory()
+
+        print(f"Total: {mem.total / 1e9:.2f} GB")
+        print(f"Used: {mem.used / 1e9:.2f} GB")
+        print(f"Available: {mem.available / 1e9:.2f} GB")
+        print(f"Usage: {mem.percent}%")
 
     # print(f'Number of bugs alive at cycle {icycle}, step {istep}: {nbugs}')
 

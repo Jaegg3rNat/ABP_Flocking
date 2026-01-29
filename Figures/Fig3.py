@@ -93,7 +93,7 @@ rc('text', usetex=True)
 '''
 
 
-mu = [180,190,200,210,220,230,250,300,350,400,450]
+mu = [180 + 10*i for i in range(31)]
 
 Pe = [0 + 0.1 * i for i in range(101)]
 Pe.sort()
@@ -142,17 +142,22 @@ pm = plt.imshow(rho_matrix, cmap=cmap, vmin=threshold, vmax=rho_matrix.max(), ex
                 origin='lower',
                 aspect='auto')
 cbar = fig.colorbar(pm, ax=axL)
-cbar.ax.tick_params(labelsize=10)
-cbar.set_label('Normalized population abundance', rotation=270, fontsize=11, labelpad=22)
+cbar.ax.tick_params(labelsize=13)
+axL.tick_params(axis='both', labelsize=15)
+cbar.set_label('Normalized population abundance',
+               rotation=270, fontsize=15, labelpad=22)
 
 
 pe_crit = 7.1
 
 mu_crit = 378.481
-plt.plot(line1[:, 0], line1[:, 1], 'k-', label=r'Phase Boundary', linewidth=2)
+plt.plot(line1[:72, 0], line1[:72, 1], 'k-', label=r'Phase Boundary', linewidth=2)
 axL.hlines(mu_crit, xmin=pe_crit, xmax=10,
            color='r' ,lw =2)
 plt.plot(pe_crit, mu_crit, 'ro', label='Critical Point', markersize=6)
+
+axL.set_ylabel('Net growth rate, ' r'$\mu $', fontsize=18)
+axL.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
 
 
 
@@ -161,7 +166,18 @@ axR = subfigs[1].subplots(1, 1)
 pm2 = plt.imshow(px_matrix, cmap='Blues', vmin=0, vmax=1, extent=np.concatenate((bounds2, bounds)),
                 origin='lower',
                 aspect='auto')
+cbar = fig.colorbar(pm2, ax=axR)
+cbar.ax.tick_params(labelsize=14)
+axR.tick_params(axis='both', labelsize=15)
+cbar.set_label('Order Parameter', rotation=270, fontsize=15, labelpad=22)
 
+# Details
+# axR.set_ylabel('Diffusive Damköhler, ' r'$\mathrm{Da} $', fontsize=13)
+axR.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
+
+
+axL.text(Pe[0]-1, mu[-1]+10,'(a)', color='black', fontsize=16+5, weight='bold',)
+axR.text(Pe[0]-1, mu[-1]+10,'(b)', color='black', fontsize=16+5, weight='bold',)
 # # --------------------------------------------------
 # ==================================================
 # ==================================================
