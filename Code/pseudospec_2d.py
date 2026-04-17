@@ -12,8 +12,6 @@ Description:
 
 #Libraries
 import numpy as np  # For array operations and mathematical functions
-from matplotlib import colors, cm  # For handling colors and colormaps in plots
-from matplotlib.cbook import strip_math
 from scipy.fftpack import fft2,ifft2,fftfreq,fftshift,ifftshift  # For Fast Fourier Transform operations
 import matplotlib.pyplot as plt  # For creating plots
 from tqdm import tqdm  # For progress bars during iterations
@@ -46,6 +44,113 @@ rc('text', usetex=True)
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
+def update_step_no_diffusion(
+    u_hat, Px_hat, Py_hat,
+    kx_, ky_,
+    f_hat, v0, r, gamma, D_R
+):
+    """
+    Compute RHS without diffusion terms.
+    All diffusion handled semi-implicitly in the time stepper.
+    """
+
+    # --- Back to physical space ---
+    u  = ifft2(u_hat).real
+    Px = ifft2(Px_hat).real
+    Py = ifft2(Py_hat).real
+
+    # --- Nonlocal interaction ---
+    S_rho0 = ifftshift(ifft2(u_hat * f_hat)).real
+
+    # =========================
+    # Density equation
+    # =========================
+    reaction_u = r * u - gamma * u * S_rho0
+
+    # NON-conservative activity (your original form)
+    activity_u = -v0 * (
+        1j * kx_ * Px_hat +
+        1j * ky_ * Py_hat
+    )
+
+    Nu_hat = fft2(reaction_u) + activity_u
+
+    # =========================
+    # Polarization Px
+    # =========================
+    reaction_Px = (r - D_R) * Px - gamma * Px * S_rho0
+    activity_Px = -1j * kx_ * u_hat * (v0 / 2)
+
+    NPx_hat = fft2(reaction_Px) + activity_Px
+
+    # =========================
+    # Polarization Py
+    # =========================
+    reaction_Py = (r - D_R) * Py - gamma * Py * S_rho0
+    activity_Py = -1j * ky_ * u_hat * (v0 / 2)
+
+    NPy_hat = fft2(reaction_Py) + activity_Py
+
+    return Nu_hat, NPx_hat, NPy_hat
+def rk2_pseudospectral_semi_implicit(
+    u, Px, Py,
+    D, f_hat,
+    dt, n_step,
+    kx_, ky_, ksq,
+    v0, r, gamma, D_R
+):
+    """
+    RK2 (midpoint) with semi-implicit diffusion for u, Px, Py.
+    """
+
+    # Precompute diffusion denominators
+    diff_denom = 1.0 + dt * D * ksq
+    diff_denom_half = 1.0 + (dt / 2) * D * ksq
+
+    for _ in range(n_step):
+
+        # --- FFT of fields ---
+        u_hat  = fft2(u)
+        Px_hat = fft2(Px)
+        Py_hat = fft2(Py)
+
+        # ==================================================
+        # Stage 1 (explicit nonlinear)
+        # ==================================================
+        N1_u, N1_Px, N1_Py = update_step_no_diffusion(
+            u_hat, Px_hat, Py_hat,
+            kx_, ky_,
+            f_hat, v0, r, gamma, D_R
+        )
+
+        # --- Midpoint (semi-implicit diffusion) ---
+        u_hat_mid  = (u_hat  + dt/2 * N1_u ) / diff_denom_half
+        Px_hat_mid = (Px_hat + dt/2 * N1_Px) / diff_denom_half
+        Py_hat_mid = (Py_hat + dt/2 * N1_Py) / diff_denom_half
+
+        # ==================================================
+        # Stage 2
+        # ==================================================
+        N2_u, N2_Px, N2_Py = update_step_no_diffusion(
+            u_hat_mid, Px_hat_mid, Py_hat_mid,
+            kx_, ky_,
+            f_hat, v0, r, gamma, D_R
+        )
+
+        # --- Full step (semi-implicit diffusion) ---
+        u_hat  = (u_hat  + dt * N2_u ) / diff_denom
+        Px_hat = (Px_hat + dt * N2_Px) / diff_denom
+        Py_hat = (Py_hat + dt * N2_Py) / diff_denom
+
+        # --- Back to real space ---
+        u  = ifft2(u_hat).real
+        Px = ifft2(Px_hat).real
+        Py = ifft2(Py_hat).real
+
+        # --- Optional but STRONGLY recommended ---
+        u[u < 0] = 0.0
+
+    return u, Px, Py
 
 '''
 ///////////////////////////////////////////////////////////
@@ -367,7 +472,7 @@ f_hat = fft2(m2)
 print(f'Kernel sum check (should be ~1.0): {np.sum(m2):.6f}')
 ##################
 # Time setup
-dt = 0.01
+dt = 0.005
 T = int(sys.argv[3])  # simulation duration
 t = np.arange(0, T + dt, dt)
 nt = len(t)
@@ -376,17 +481,25 @@ nt = len(t)
 kx = 2 * np.pi * fftfreq(nx, L / nx)
 ky = 2 * np.pi * fftfreq(nx, L / ny)
 kx_, ky_ = np.meshgrid(kx, ky, indexing="ij")
+ksq = kx_**2 + ky_**2
+# ksq[0,0] = 1.0
+kmax_x = np.max(np.abs(kx))
+kmax_y = np.max(np.abs(ky))
+
+mask = (np.abs(kx_) <= (2/3)*kmax_x) & (np.abs(ky_) <= (2/3)*kmax_y)
+
+
 
 
 dmin = min(dx, dy)
-kmax = np.max(np.sqrt(kx_**2 + ky_**2))
-CFL = 0.3 *np.sqrt(2)/ (VELOCITY * kmax )
-if dt < CFL:
-    print(f'CFL Stable: {dt:.2e} < {CFL:.2e}')
-else:
-    print(f'🚨 CFL Unstable: {dt:.2e} >= {CFL:.2e}')
+# kmax = np.max(np.sqrt(kx_ ** 2 + ky_ ** 2))
+# CFL = 0.3 * np.sqrt(2) / (VELOCITY * kmax)
+# if dt < CFL:
+#     print(f'CFL Stable: {dt:.2e} < {CFL:.2e}')
+# else:
+#     print(f'🚨 CFL Unstable: {dt:.2e} >= {CFL:.2e}')
 
-print(f'Difussion bound:{dx**2 / (4 * DIFF_T):.2e}, Time step:{dt:.2e}')
+print(f'Difussion bound:{dx ** 2 / (4 * DIFF_T):.2e}, Time step:{dt:.2e}')
 print(f'Advection bound:{(dx**2/ (4*VELOCITY)):.2e}, Time step:{dt:.2e}')
 
 '''
@@ -465,10 +578,9 @@ r =(r)
 d = (DEATH_RATE)
 gamma = (COMPETITION_RATE)
 D_R = (DIFF_R)
-kx_ = kx_
-ky_ = ky_
+
 f_hat = f_hat
-ksq = kx_**2 + ky_**2
+
 
 
 
@@ -742,18 +854,19 @@ def run_simulation_and_animate(
             u, Px, Py, D, f_hat, dt, 1,
             kx_, ky_, v0, r, gamma, D_R
         )
+        # u, Px, Py = rk2_pseudospectral_semi_implicit(u, Px, Py,D, f_hat,dt, 1,kx_, ky_, ksq,v0, r, gamma, D_R)
 
         # ---------------------------
         # Stability checks
         # ---------------------------
         min_density = u.min()
         # if min_density < TOLERANCE_BREAK:
-        #     print(f"🚨 BREAK: density {min_density:.2e} at step {n}")
-        #     idx = np.unravel_index(np.argmin(u), u.shape)
-        #     print(f'Breaking in position: {idx}')
+            # print(f"🚨 BREAK: density {min_density:.2e} at step {n}")
+        # #     idx = np.unravel_index(np.argmin(u), u.shape)
+        # #     print(f'Breaking in position: {idx}')
         #     break
 
-        if min_density < TOLERANCE_WARNING:
+        if min_density < 0:#TOLERANCE_WARNING:
             # print(f"⚠️ WARNING: density {min_density:.2e} at step {n}")
             np.maximum(u, 0.0, out=u)
 
@@ -777,9 +890,10 @@ def run_simulation_and_animate(
             ds_smax.resize(ds_smax.shape[0] + 1, axis=0)
             ds_smax[-1] = s_max
             # --- plotting ---
-            plot_polarization_orientation(Px, Py, count, path)
-            plot_density(u, count, path)
+            # plot_polarization_orientation(Px, Py, count, path)
+            # plot_density(u, count, path)
             plot_pol_hue(Px,Py,count,path)
+            count += 1
             plt.close("all")  # CRITICAL
 
         # ---------------------------

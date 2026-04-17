@@ -105,7 +105,7 @@ print(mu[0],mu[-1])
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 '''
-corrupt_files = check_corrupt_files(mu_values=mu, pe_values=Pe)
+# corrupt_files = check_corrupt_files(mu_values=mu, pe_values=Pe)
 '''
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
@@ -163,7 +163,9 @@ axL.plot(line1[:63, 0], line1[:63, 1], ls='-', color='black', alpha=0.8,lw =2)
 # axL.scatter(points[:, 0], points[:, 1], marker='o', color='black',alpha = 0.01)
 # axL.hlines(171.76, xmin=0, xmax=6.008,
 #            color='black', ls='--', alpha=0.2)
-
+# axL.plot(4.5,150, 'o', color='darkblue',alpha = 0.8)
+# axL.plot(4.5,120, 'o', color='darkred',alpha = 0.8)
+# axL.plot(5.6,150, 'o', color='darkred',alpha = 0.8)
 pe_crit = 6.26
 mu_crit = 175.484
 axL.hlines(mu_crit, xmin=pe_crit, xmax=Pe[-1],
@@ -199,18 +201,24 @@ pm = plt.imshow(px_matrix,
 cbar = fig.colorbar(pm, ax=axR)
 cbar.ax.tick_params(labelsize=13)
 axR.tick_params(axis='both', labelsize=15)
-cbar.set_label('Order Parameter', rotation=270, fontsize=15, labelpad=22)
+cbar.set_label(r'Order Parameter, $\psi$', rotation=270, fontsize=15, labelpad=22)
 
 # Details
 # axR.set_ylabel('Diffusive Damköhler, ' r'$\mathrm{Da} $', fontsize=13)
 axR.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
 
 
-axL.text(Pe[0]-1, mu[-1]+10,'(a)', color='black', fontsize=16+5, weight='bold',)
-axR.text(Pe[0]-1, mu[-1]+10,'(b)', color='black', fontsize=16+5, weight='bold',)
+axL.text(Pe[0]-1, mu[-1]+10, r'(\textbf{a})', fontsize=16+3,
+        verticalalignment='top',
+        bbox=dict(boxstyle="round,pad=0.25",
+                  fc="white", ec="black", lw=0.6, alpha=1))
+axR.text(Pe[0]-1, mu[-1]+10, r'(\textbf{b})', fontsize=16+3,
+        verticalalignment='top',
+        bbox=dict(boxstyle="round,pad=0.25",
+                  fc="white", ec="black", lw=0.6, alpha=1))
 
 # # --------------------------------------------------
 # ==================================================
 # ==================================================
-plt.savefig('Fig_1.png', bbox_inches="tight")  #
-# plt.savefig('Fig_HeatM.pdf', bbox_inches="tight")  #
+
+plt.savefig('../Draft/V2/Fig_1.pdf', bbox_inches="tight")  #

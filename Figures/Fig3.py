@@ -93,7 +93,7 @@ rc('text', usetex=True)
 '''
 
 
-mu = [180 + 10*i for i in range(31)]
+mu = [180 + 10*i for i in range(32)]
 
 Pe = [0 + 0.1 * i for i in range(101)]
 Pe.sort()
@@ -145,7 +145,7 @@ cbar = fig.colorbar(pm, ax=axL)
 cbar.ax.tick_params(labelsize=13)
 axL.tick_params(axis='both', labelsize=15)
 cbar.set_label('Normalized population abundance',
-               rotation=270, fontsize=15, labelpad=22)
+               rotation=270, fontsize=18, labelpad=22)
 
 
 pe_crit = 7.1
@@ -156,8 +156,8 @@ axL.hlines(mu_crit, xmin=pe_crit, xmax=10,
            color='r' ,lw =2)
 plt.plot(pe_crit, mu_crit, 'ro', label='Critical Point', markersize=6)
 
-axL.set_ylabel('Net growth rate, ' r'$\mu $', fontsize=18)
-axL.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
+axL.set_ylabel('Net growth rate, ' r'$\mu $', fontsize=20)
+axL.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=20)
 
 
 
@@ -169,17 +169,24 @@ pm2 = plt.imshow(px_matrix, cmap='Blues', vmin=0, vmax=1, extent=np.concatenate(
 cbar = fig.colorbar(pm2, ax=axR)
 cbar.ax.tick_params(labelsize=14)
 axR.tick_params(axis='both', labelsize=15)
-cbar.set_label('Order Parameter', rotation=270, fontsize=15, labelpad=22)
+cbar.set_label(r'Order Parameter, $\psi$', rotation=270, fontsize=18, labelpad=22)
 
 # Details
 # axR.set_ylabel('Diffusive Damköhler, ' r'$\mathrm{Da} $', fontsize=13)
-axR.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=18)
+axR.set_xlabel('Characteristic Péclet, ' r'$\mathrm{Pe}$', fontsize=20)
 
 
-axL.text(Pe[0]-1, mu[-1]+10,'(a)', color='black', fontsize=16+5, weight='bold',)
-axR.text(Pe[0]-1, mu[-1]+10,'(b)', color='black', fontsize=16+5, weight='bold',)
+
+axL.text(Pe[0]-1, mu[-1]+10, r'(\textbf{a})', fontsize=16+3,
+        verticalalignment='top',
+        bbox=dict(boxstyle="round,pad=0.25",
+                  fc="white", ec="black", lw=0.6, alpha=1))
+axR.text(Pe[0]-1, mu[-1]+10, r'(\textbf{b})', fontsize=16+3,
+        verticalalignment='top',
+        bbox=dict(boxstyle="round,pad=0.25",
+                  fc="white", ec="black", lw=0.6, alpha=1))
 # # --------------------------------------------------
 # ==================================================
 # ==================================================
-plt.savefig('Fig_3.png', bbox_inches="tight")  #
-# plt.savefig('Fig_HeatM.pdf', bbox_inches="tight")  #
+plt.savefig('../Draft/V2/Fig_3.pdf', bbox_inches="tight")  #
+

@@ -227,8 +227,8 @@ def INITIAL_CONDITIONS(initialize, pe0=None, mu0=None):
         bias = np.float32(0.0)  # small bias to nudge global direction
         Px = (noise_amp * np.random.randn(nx) + bias).astype(np.float64)
     else:
-        folder = f'C:../Data/turing_crossing/_PE{pe0:.2f}_MU{mu0:.2f}'
         # folder = f'C:../Data/1d_v1/_PE{pe0:.2f}_MU{mu0:.2f}'
+        folder = f'../Data/turing_forward/_PE{pe0:.2f}_MU{mu0:.2f}'
         f = h5py.File(f'{folder}/DATA.h5', 'r')
         meta = f['FIELD_DATA']
         u = meta['RHO_F'][:].flatten()
@@ -428,7 +428,7 @@ print(f'Advection bound: {(dx / VELOCITY):.2e}, Time step: {dt:.2e}')
 # -------------------------------------------------------------------------------------
 # Directory Setup (unchanged)
 # -------------------------------------------------------------------------------------
-main_directory = "data_1d"
+main_directory = "../Data/turing_backward/"
 if not os.path.exists(main_directory):
     os.makedirs(main_directory)
 
@@ -447,7 +447,7 @@ if not os.path.exists(path):
 # Initial Conditions (arrays as float32)
 # -------------------------------------------------------------------------------------
 # u, Px = INITIAL_CONDITIONS("random")
-u,Px = INITIAL_CONDITIONS('', pe0 = 4, mu0=150 )
+u,Px = INITIAL_CONDITIONS('', pe0 = 4.7, mu0=150 )
 # -----------------------
 # Display Simulation Parameters
 # -----------------------
@@ -520,7 +520,7 @@ for n in tqdm(range(1, nt)):
 
     ###########################################
     #GENERATE AND UPDATE FIG
-    if n % 5000 == 0:
+    if n % 500 == 0:
     # if n == nt -1:
     #     # v = instantaneous_drift_velocity(rho_prev, Px, dx, 1000*dt)
     #
@@ -528,7 +528,7 @@ for n in tqdm(range(1, nt)):
     #     # print(v)
     #
     #     # rho_prev[:] = Px
-        create_polarization_plot_1d(u, Px, t, n, bounds, path, count,nx) #(optional create figures for animation)
+    #     create_polarization_plot_1d(u, Px, t, n, bounds, path, count,nx) #(optional create figures for animation)
     #     count+=1
     # ###########################################
     # Time series data

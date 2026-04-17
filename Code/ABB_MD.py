@@ -19,6 +19,7 @@ import os, sys
 import matplotlib.colors as mcolors
 from tqdm import tqdm
 import psutil
+import h5py
 
 '''
 ///////////////////////////////////////////////////////////
@@ -94,7 +95,7 @@ xcells = 1  # system size in x (periodic box width)
 ycells = 1  # system size in y
 ###########################################
 ncycles = 10000  # number of cycles
-nsteps = 200  # steps per cycle
+nsteps = 1000  # steps per cycle
 dt = 0.001
 tfinal = ncycles * nsteps * dt
 ###########################################
@@ -119,7 +120,7 @@ difr = 2e-3
 jump = np.sqrt(2.0 * diff * dt)
 jumpr = np.sqrt(2.0 * difr * dt)
 
-v0 = float(sys.argv[2]) #3.557e-3
+v0 = float(sys.argv[2])#3.557e-3
 v0dt = v0 * dt
 CARRYING_CAPACITY = 50
 ###########################################
@@ -328,11 +329,31 @@ for icycle in tqdm(range(1, ncycles + 1)):
 
 
         mem = psutil.virtual_memory()
+        if mem.used >= 0.9*mem.total:
+            # If memory usage is dangerously high, save the last known configuration
+            # (only the alive bugs) into an HDF5 file and exit to avoid crashing.
+            print("Memory usage is above 90%! Saving last configuration and exiting to prevent crashes.")
+            try:
+                # Ensure output dir exists
+                os.makedirs(gif_outdir, exist_ok=True)
+                h5_path = os.path.join(gif_outdir, f"last_config_cycle{icycle:05d}_step{istep:03d}.h5")
+                with h5py.File(h5_path, 'w') as hf:
+                    hf.create_dataset('xpos', data=xpos[:nbugs])
+                    hf.create_dataset('ypos', data=ypos[:nbugs])
+                    hf.create_dataset('theta', data=theta[:nbugs])
+                    hf.attrs['nbugs'] = nbugs
+                    hf.attrs['time'] = time
+                    hf.attrs['icycle'] = icycle
+                    hf.attrs['istep'] = istep
+                print(f"Saved last configuration to {h5_path}")
+            except Exception as e:
+                print(f"Failed to save HDF5 snapshot: {e}")
+            sys.exit(1)
 
-        print(f"Total: {mem.total / 1e9:.2f} GB")
-        print(f"Used: {mem.used / 1e9:.2f} GB")
-        print(f"Available: {mem.available / 1e9:.2f} GB")
-        print(f"Usage: {mem.percent}%")
+        # print(f"Total: {mem.total / 1e9:.2f} GB")
+        # print(f"Used: {mem.used / 1e9:.2f} GB")
+        # print(f"Available: {mem.available / 1e9:.2f} GB")
+        # print(f"Usage: {mem.percent}%")
 
     # print(f'Number of bugs alive at cycle {icycle}, step {istep}: {nbugs}')
 
