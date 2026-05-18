@@ -10,6 +10,7 @@ This project contains the scripts used to generate and visualize the results pre
 [![ArXiv](https://img.shields.io/badge/ArXiv-2409.04268-b31b1b)](https://arxiv.org/abs/2409.04268)
 [![Communication Physics](https://img.shields.io/badge/Communication%20Physics-Nature-8b0000)](https://www.nature.com/articles/s42005-025-02246-3)
 -->
+
 It includes a numerical integration of partial differential equations (PDEs) using a pseudospectral approach with the Runge-Kutta 4th order (RK4) method.
 It also includes a particle-based simulation of the same system using an agent-based model (ABM) approach.
 --------------------
@@ -103,9 +104,9 @@ It will generate the data used in the heatmaps of the paper.
 --------------------------
 
 ## Acknowledgments
-N.S. and E.H-G. acknowledge 
+    N.S. and E.H-G. acknowledge 
 	funding by the Spanish Ministerio de Ciencia, 
-	Innovaci\'on y Universidades
+	Innovación y Universidades
 	(MICIU/AEI/10.13039/501100011033) through
 	the Maria de Maeztu project CEX2021-001164-M.
 	C.L. and E.H-G. acknowledge grant LAMARCA PID2021-123352OBC32
@@ -122,20 +123,16 @@ Copyright (c) 2026 Nathan O. Silvano
  If you use this code, please cite as:
  
 ```
- @misc{silvano_2025_16080825,
-  author       = {Silvano, Nathan and
-                  Valeriano, Joao and
+ @misc{silvano,
+  author       = {Silvano, Nathan 
                   Hernández-García, Emilio and
-                  Lopez, Cristobal and
-                  Martinez-Garcia, Ricardo},
-  title        = {Flow spatial structure determines pattern
-                   instabilities in nonlocal models of population
-                   dynamics},
-  month        = jul,
-  year         = 2025,
+                  Lopez, Cristobal},
+  title        = {},
+  month        = ,
+  year         = ,
   publisher    = {Zenodo},
   version      = {v1.0.0},
-  doi          = {10.5281/zenodo.16080825},
-  url          = {https://doi.org/10.5281/zenodo.16080825},
+  doi          = {},
+  url          = {},
 }
 ```
