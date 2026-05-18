@@ -17,6 +17,7 @@ import sys, os, h5py
 import matplotlib.pyplot as plt
 # import cv2 # This is only for video-making (optional)
 from tqdm import tqdm
+from matplotlib.ticker import FormatStrFormatter
 
 from scipy.signal import find_peaks
 
@@ -274,33 +275,27 @@ def p_x(Px):
     px = Px
     return px
 def op(Px,x):
-    Px = Px
-    # Normalize magnitude for arrow size and color intensity
-    Px_max = np.max(np.abs(Px)) if np.max(np.abs(Px)) > 0 else 1.0
-    Px_norm = Px / Px_max
+    px = Px
+    op = np.sum(px) / np.sum(np.abs(px))
 
-    # Choose arrow positions (sample to avoid clutter)
-    step = max(1, nx // 40)
-    x_sample = x[::step]
-    Px_sample = Px_norm[::step]
+    return op
 
-    return Px_sample, x_sample
-
-def create_polarization_plot_1d(u, Px, t, n, bounds, path, count,nx):
+def create_polarization_plot_1d(u, Px, t, n, path, count):
     # ------------------------------------------
     # ------------------------------------------
     # Domain bounds and system properties
-    bounds = np.array([-0.5, 0.5])  # Domain bounds (float32)
+    R = 0.1
+    bounds = np.array([-0.5 / R, 0.5 / R])  # Domain bounds (float32)
     L = (bounds[1] - bounds[0])  # Length of the domain (float32)
 
-
-    dx = (L / nx)  # Grid spacing in x (float32)
+    # Numerical grid properties
+    nx = 512  # Number of grid points in x (keep as int)
+    # dx = (L / nx)  # Grid spacing in x (float32)
     x = np.linspace(*bounds, nx + 1)[:-1]  # Periodic in x (exclude 0 for periodicity), float32
     x_min, x_max = bounds[0], bounds[1]
 
 
-
-    fig = plt.figure(dpi=300, figsize=(8, 4))
+    fig = plt.figure(dpi=400, figsize=(8, 4))
 
     # === Figure layout: 3 rows ===
 
@@ -316,35 +311,16 @@ def create_polarization_plot_1d(u, Px, t, n, bounds, path, count,nx):
     ax1.axhline(y= 0, color='k', linestyle='--')
     ax2.axhline(y= 0, color='k', linestyle='--',lw = 0.4)
     rho1 = rho_x(u)
+    px = p_x(Px)
 
-    ax1.plot(x,rho1, '-', color = 'darkgreen', lw = 2)
-
-
-    # Px_sample, x_sample = op(Px,x)
-    # # Draw arrows: right = red, left = blue
-    # cmap = plt.get_cmap("seismic")  # red→positive, blue→negative
-    # colors = cmap((Px_sample + 1) / 2)  # map [-1,1] → [0,1]
-    #
-    # for xi, pxi, c in zip(x_sample, Px_sample, colors):
-    #     ax2.arrow(xi, 0, 0, 0.6 * np.sign(pxi), head_width=0.05 * (x_max - x_min) / nx,head_length=0.1, fc=c, ec=c, lw=0.5, alpha=1)
-    #
-    # # Add colorbar for direction
-    # norm = mcolors.Normalize(vmin=-1, vmax=1)
-    # sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    # sm.set_array([])
-    # cbar = plt.colorbar(sm, ax=ax2, orientation='horizontal', pad=0.2)
-    # cbar.set_label("" r"($\leftarrow$ negative $|$ $\rightarrow$ positive)", fontsize = 12)
-    # # Adjust position (y-shift)
-    # cbar_ax = cbar.ax
-    # pos = cbar_ax.get_position()
-    # cbar_ax.set_position([pos.x0, pos.y0 - 0.1, pos.width, pos.height])  # shift up by 0.05
+    ax1.plot(x,rho1, '.-', color = 'darkgreen', lw = 1.5)
+    ax2.plot(x, px, '.-', color='darkblue', lw=1.5)
 
 
-    ax1.set_ylabel(r'$\rho(x)$', fontsize=16,labelpad=16,)
-    ax1.set_title(f'Simulation Time: {t[n]:.0f}', fontsize=14)
-    P = px(Px)
-    ax2.plot(x, Px, '-', color='darkblue', lw=2)
-    ax2.set_title('Order Parameter 'r'$|{\bf P}|:'f' {P:.5f}$', fontsize=14)
+    # ax1.set_ylabel(r'$\rho(u,t)$', fontsize=16,labelpad=16,)
+    ax1.set_title(f'Simulation Time: {t[n]:.1f}', fontsize=14)
+    psi = op(px,x)
+    ax2.set_title('Order Parameter 'rf'$\psi = {psi:.3f}$', fontsize=14)
 
 
     # for i in range(2):
@@ -356,21 +332,28 @@ def create_polarization_plot_1d(u, Px, t, n, bounds, path, count,nx):
     # ax3[1].set_ylim([-1, 1])
     # ax3[1].set_yticks([])
     # ax3[1].set_xlabel(r"$x$",fontsize = 17)
-    # ax2.set_ylabel("Polarization direction\n  and magnitude",labelpad = 20, fontsize=12)
-    # ax2.yaxis.set_label_coords(-0.05, -0.15)  # (x, y) in axes fraction
+
+    # ax2.set_ylabel(fr"$p(u,t)$",labelpad = 3, fontsize=14)
+
+    ax1.set_ylabel(r'$\rho(u,t)$', fontsize=16)
+    ax2.set_ylabel(r'$p(u,t)$', fontsize=14)
+
+    # Fix label positions in axes coordinates
+    ax1.yaxis.set_label_coords(-0.10, 0.5)
+    ax2.yaxis.set_label_coords(-0.1, 0.5)
 
 
 
     # === (3) Polarization representation (arrows + color map) ===
     ax2.set_xlim([x_min, x_max])
-    # ax2.set_ylim([-1, 1])
-    # ax1.set_ylim([0., 1.05])
+    # ax1.set_ylim([0.5, 1.5])
+    ax2.set_ylim([-0.2, 0.2])
 
     # ax2.set_yticks([])
-    # ax2.set_xlabel(r"$x$",fontsize = 17)
+    ax2.set_xlabel(r"System length, $u$",fontsize = 17)
 
-
-    plt.savefig(f"{path}/fig{count:03d}.png", bbox_inches="tight")  #
+    ax2.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.savefig(f"{path}/fig{count:04d}.png", bbox_inches="tight")  #
     plt.close()
 
 '''
@@ -405,6 +388,7 @@ r =  np.float64(MU / TAU)
 VELOCITY = np.float64(PE * DIFF_T / COMP_RADIUS)
 COMPETITION_RATE = np.float64(r)  # BIRTH_RATE/(2*np.pi) - DEATH_RATE  (kept as float32)
 D_r = np.float64(DIFF_R * TAU)
+
 
 # Kernel (make sure m2 is float32 before FFT)
 m2 = tophat_kernel_1d(dx, nx, COMP_RADIUS).astype(np.float64)  # mc top hat kernel (float32)
@@ -446,8 +430,8 @@ if not os.path.exists(path):
 # -------------------------------------------------------------------------------------
 # Initial Conditions (arrays as float32)
 # -------------------------------------------------------------------------------------
-# u, Px = INITIAL_CONDITIONS("random")
-u,Px = INITIAL_CONDITIONS('', pe0 = 4, mu0=150 )
+u, Px = INITIAL_CONDITIONS("random")
+# u,Px = INITIAL_CONDITIONS('', pe0 = 4, mu0=150 )
 # -----------------------
 # Display Simulation Parameters
 # -----------------------
@@ -483,7 +467,7 @@ density_list.append(rho(u))
 pol_list.append(px(Px))
 integral_pol_list.append(integral_px(Px))
 ##################################
-# create_polarization_plot_1d(u, Px, t, 0, bounds, path, count) #(create initial plot)
+create_polarization_plot_1d(u, Px, t, 0,  path,count) #(create initial plot)
 count+=1
 
 
@@ -495,17 +479,14 @@ grp1.create_dataset(f"PX_0", data=Px)
 rho_prev = Px.copy()
 
 
-create = [int(20000 + ii*10000) for ii in range(10)]  #Create list for density snapshots
-print(create)
+# create = [int(20000 + ii*10000) for ii in range(10)]  #Create list for density snapshots
+# print(create)
 for n in tqdm(range(1, nt)):
     u, Px = rk4_pseudospectral_1d(
         u, Px,
         DIFF_T, f_hat, dt, 1,
         kx_, VELOCITY, r, COMPETITION_RATE, DIFF_R
     )
-
-
-
    ############################################
    #CHECK FOR NEGATIVE DENSITIES
     min_density = np.min(u)
@@ -520,7 +501,7 @@ for n in tqdm(range(1, nt)):
 
     ###########################################
     #GENERATE AND UPDATE FIG
-    if n % 5000 == 0:
+    if n % 200 == 0:
     # if n == nt -1:
     #     # v = instantaneous_drift_velocity(rho_prev, Px, dx, 1000*dt)
     #
@@ -528,8 +509,8 @@ for n in tqdm(range(1, nt)):
     #     # print(v)
     #
     #     # rho_prev[:] = Px
-        create_polarization_plot_1d(u, Px, t, n, bounds, path, count,nx) #(optional create figures for animation)
-    #     count+=1
+        create_polarization_plot_1d(u, Px, t, n, path, count) #(optional create figures for animation)
+        count+=1
     # ###########################################
     # Time series data
         density_list.append(rho(u))

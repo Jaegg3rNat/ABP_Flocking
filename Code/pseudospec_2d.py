@@ -354,24 +354,29 @@ def plot_polarization_orientation(Px, Py,count,path):
     Color-coded orientation plot for a 2D polarization field.
     """
     theta = np.arctan2(Py, Px)  # [-pi, pi)
+    x_min, x_max = bounds[0], bounds[1]
+    y_min, y_max = bounds[0], bounds[1]
+    extent = [x_min/0.1, x_max/0.1, y_min/0.1, y_max/0.1]
 
     plt.figure(figsize=(6, 6))
-    im = plt.imshow(
-        theta,
-        origin="lower",
-        cmap="hsv",
-        vmin=-np.pi,
-        vmax=np.pi
+    pcm1 = plt.imshow(
+        theta,extent = extent, cmap = 'hsv', vmin = -np.pi,
+    vmax = np.pi
     )
-    plt.colorbar(
-        im,
-        ticks=[-np.pi, -np.pi/2, 0, np.pi/2, np.pi],
-        label=r"$\theta$"
+    cbar = plt.colorbar(
+        pcm1,
+        ticks=[-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi]
     )
+    cbar.ax.set_yticklabels([
+        r"$-\pi$", r"$-\frac{\pi}{2}$", r"$0$", r"$\frac{\pi}{2}$", r"$\pi$"
+    ], fontsize=15)
     plt.axis("equal")
     plt.title("Polarization orientation (HSV)")
     plt.tight_layout()
-    plt.savefig(f"{path}/fig{count:03d}.png", dpi=200, bbox_inches='tight')
+    plt.ylabel(r'$y/R$', fontsize=15)
+    plt.xlabel(r'$x/R$', fontsize=15)
+
+    plt.savefig(f"{path}/fig{count:04d}.png", dpi=600, bbox_inches='tight')
     plt.close()
 def plot_density(u,count,path):
     """
@@ -389,13 +394,13 @@ def plot_density(u,count,path):
     plt.tight_layout()
     plt.savefig(f"{path}/density_fig{count:03d}.png", dpi=200, bbox_inches='tight')
     plt.close()
-def plot_pol_hue(Px,Py,count, path):
-    fig, ax2 = plt.subplots(figsize=(10, 10))
+def plot_pol_hue(Px,Py,count, path, n):
+    fig, ax2 = plt.subplots(figsize=(5, 5))
 
     # --- Extent ---
     x_min, x_max = bounds[0], bounds[1]
     y_min, y_max = bounds[0], bounds[1]
-    extent = [x_min, x_max, y_min, y_max]
+    extent = [x_min/0.1, x_max/0.1, y_min/0.1, y_max/0.1]
 
     # --- Polarization magnitude and angle ---
     mag = np.sqrt(Px ** 2 + Py ** 2)
@@ -411,23 +416,42 @@ def plot_pol_hue(Px,Py,count, path):
 
     rgb = mcolors.hsv_to_rgb(hsv)
 
-    ax2.imshow(rgb, origin="lower", extent=extent)
-    ax2.set_xlim(x_min, x_max)
-    ax2.set_ylim(y_min, y_max)
-    # ax2.set_title("Polarization direction & magnitude")
+    pcm1 = ax2.imshow(rgb, extent=extent,vmin=-np.pi,
+        vmax=np.pi, cmap= 'hsv')
+
+    cbar = plt.colorbar(
+        pcm1,fraction =0.045,
+        ticks=[-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi]
+    )
+    cbar.set_label(
+        r"Normalized orientation angle, $\theta$",
+        rotation=270,  # angle in degrees (0 = horizontal, 90 = vertical)
+        labelpad=15, fontsize=12  # distance from colorbar
+    )
+    cbar.ax.set_yticklabels([
+        r"$-\pi$", r"$-\frac{\pi}{2}$", r"$0$", r"$\frac{\pi}{2}$", r"$\pi$"
+    ], fontsize=15)
+
+    # ax2.set_xlim(x_min, x_max)
+    # ax2.set_ylim(-0.5, 0.5)
+    # ax2.set_title("Polarization")
 
     # --- Correct cyclic colorbar (orientation only) ---
-    norm = mpl.colors.Normalize(vmin=0, vmax=1)
-    sm = mpl.cm.ScalarMappable(cmap="hsv", norm=norm)
-    sm.set_array([])
+    # norm = mpl.colors.Normalize(vmin=0, vmax=1)
+    # sm = mpl.cm.ScalarMappable(cmap="hsv", norm=norm)
+    # sm.set_array([])
 
-    cbar = fig.colorbar(sm, ax=ax2, fraction=0.046, pad=0.04)
-    # cbar.set_label("Orientation (degrees)")
-    cbar.set_ticks(np.linspace(0, 1, 9))
-    cbar.set_ticklabels(np.linspace(0, 360, 9).astype(int))
+
+    # plt.title("Polarization orientation (HSV)")
+    plt.tight_layout()
+    plt.ylabel(r'$y/R$', fontsize=15)
+    plt.xlabel(r'$x/R$', fontsize=15)
+    ax2.set_title(f'Simulation Time: {t[n]:.1f}', fontsize=14)
+    # ax2.set_xticklabels([-5, -2.5, 0, 2.5, 5])
+    # ax2.set_yticklabels([-5, -4, -2, 0, 2, 4])
 
     # --- Save ---
-    plt.savefig(f"{path}/fig_pol{count:03d}.png", dpi=200, bbox_inches="tight")
+    plt.savefig(f"{path}/fig_pol{count:04d}.png", dpi=600, bbox_inches="tight")
     plt.close()
 
 
@@ -892,7 +916,7 @@ def run_simulation_and_animate(
             # --- plotting ---
             # plot_polarization_orientation(Px, Py, count, path)
             # plot_density(u, count, path)
-            plot_pol_hue(Px,Py,count,path)
+            plot_pol_hue(Px,Py,count,path,n)
             count += 1
             plt.close("all")  # CRITICAL
 

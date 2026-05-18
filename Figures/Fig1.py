@@ -221,4 +221,5 @@ axR.text(Pe[0]-1, mu[-1]+10, r'(\textbf{b})', fontsize=16+3,
 # ==================================================
 # ==================================================
 
-plt.savefig('../Draft/V2/Fig_1.pdf', bbox_inches="tight")  #
+# plt.savefig('../Draft/V2/Fig_1.pdf', bbox_inches="tight")  #
+plt.savefig('../Draft/V3/Fig_1.eps', bbox_inches="tight")  #

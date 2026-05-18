@@ -95,24 +95,24 @@ def images_to_video2(image_folder, output_video_path, fps, crf=23, resize=None):
 
 if __name__ == "__main__":
     # Define base folder and velocity field name
-    v0 = 2e-4
-    diff = 2e-6
-    Pe = 8
-    Mu = 380
-    base_folder = f"Data/gif_frames_V0{v0:.4e}_DT{diff:.4e}/"  # Replace with the actual base folder path
-    name = f'v0_{v0:.1e}Dt_{diff:.1e}_phase'  # Replace with the actual movie name
+    # v0 = 2e-4
+    # diff = 2e-6
+    Pe = 1.5
+    Mu = 200
+    # base_folder = f"Data/gif_frames_V0{v0:.4e}_DT{diff:.4e}/"  # Replace with the actual base folder path
+    # name = f'v0_{v0:.1e}Dt_{diff:.1e}_phase'  # Replace with the actual movie name
 
-    # base_folder = f"Code/run_data_2d/_PE{Pe:.2f}_MU{Mu:.2f}/"  # Replace with the actual base folder path
-    # name = f'{Pe}_{Mu}_2d_phase'  # Replace with the actual movie name
+    base_folder = f"Code/data_1d/_PE{Pe:.2f}_MU{Mu:.2f}/"  # Replace with the actual base folder path
+    name = f'SM_Video_2'  # Replace with the actual movie name
     # Define parameters for the video creation
 
 
     # Construct the paths for the image folder and the output video file
     image_folder_path = f'{base_folder}'
-    output_video_path = f'Data/{name}_video.mov'
+    output_video_path = f'Data/{name}.mov'
 
     # Set the desired frames per second (fps) for the output video
-    fps = 60
+    fps = 40
 
     # Call the function to convert images to video
     # images_to_video(image_folder_path, output_video_path, fps)
